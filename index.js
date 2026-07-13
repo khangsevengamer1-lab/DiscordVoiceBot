@@ -4,58 +4,44 @@ const { joinVoiceChannel } = require("@discordjs/voice");
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
+const TOKEN = process.env.TOKEN;
+const GUILD_ID = process.env.GUILD_ID;
+const VOICE_CHANNEL_ID = process.env.VOICE_CHANNEL_ID;
+
 let connection;
 
-client.once("ready", () => {
-    console.log(`Đăng nhập thành công: ${client.user.tag}`);
-
-    const guild = client.guilds.cache.get(process.env.GUILD_ID);
+function connectVoice() {
+    const guild = client.guilds.cache.get(GUILD_ID);
 
     if (!guild) {
-        console.log("Guild not found");
+        console.log("Không tìm thấy server.");
         return;
     }
 
     connection = joinVoiceChannel({
-        channelId: process.env.VOICE_CHANNEL_ID,
-        guildId: process.env.GUILD_ID,
+        channelId: VOICE_CHANNEL_ID,
+        guildId: GUILD_ID,
         adapterCreator: guild.voiceAdapterCreator,
         selfMute: false,
         selfDeaf: false
     });
 
-    console.log("✅ Đã treo room thành công!");
+    console.log("Đã vào Voice.");
+}
+
+client.once("ready", () => {
+    console.log(`${client.user.tag} Online`);
+    connectVoice();
 });
 
-client.on("messageCreate", async (message) => {
-
-    if (message.author.bot) return;
-
-    if (message.content === ".ping") {
-        return message.reply("🏓 Pong!");
+client.on("voiceStateUpdate", () => {
+    if (!connection) {
+        connectVoice();
     }
-
-    if (message.content.startsWith(".noi")) {
-
-        const text = message.content.slice(4).trim();
-
-        if (!text) {
-            return message.reply("Ví dụ:\n.noi Xin chào mọi người");
-        }
-
-        console.log("Nội dung:", text);
-
-        return message.reply(`🗣️ Đã nhận:\n${text}`);
-
-        // Sau này sẽ thêm phần phát giọng nói tại đây
-    }
-
 });
 
-client.login(process.env.TOKEN);
+client.login(TOKEN);
